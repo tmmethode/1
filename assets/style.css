@@ -1,0 +1,42 @@
+.gradient-custom-2 {
+    /* fallback for old browsers */
+    background: #284fa1;
+}
+
+body{
+    background-color: #DCDCDC;
+}
+
+@media (min-width: 768px) {
+.gradient-form {
+height: 100vh !important;
+}
+}
+@media (min-width: 769px) {
+.gradient-custom-2 {
+border-top-right-radius: .3rem;
+border-bottom-right-radius: .3rem;
+}
+}
+
+.nav-home-link {
+    color: green;
+}
+
+.nav-home-link:hover {
+    color: #284fa1 !important;
+    background-color: #C0C0C0 !important;
+    box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.2); /* Adjust shadow properties */
+}
+
+/* code to change background color */
+.nav-home-link:active {
+    background-color: #C0C0C0 !important;
+    color: green !important;
+}
+
+.figTitle{
+    color: white;
+    font-size: 20;
+    background-color: #284fa1 !important;
+}
