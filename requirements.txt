@@ -2,5 +2,5 @@ pandas
 matplotlib
 streamlit
 gluonts
-torch
+pytorch
 
