@@ -3,4 +3,5 @@ matplotlib
 streamlit
 gluonts
 pytorch
+lightning
 
