@@ -1,69 +1,68 @@
-from dash import Dash, html, dcc  # type: ignore
-import dash_bootstrap_components as dbc  # type: ignore
-import logging
-import dash  # type: ignore
-from topbar import topbar
-from sidebar import sidebar
+import streamlit as st
+import pandas as pd
+import matplotlib.pyplot as plt
+from gluonts.dataset.common import ListDataset
+from gluonts.torch.model.deepar import DeepAREstimator
 
+# Title and Description
+st.title("Time Series Forecasting with DeepAR")
+st.write("This app demonstrates time series forecasting using the DeepAR model from GluonTS.")
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s]: %(message)s",
-    handlers=[
-        logging.FileHandler("app.log"),
-        logging.StreamHandler()
-    ]
+# Load data
+@st.cache
+def load_data():
+    url = (
+        "https://raw.githubusercontent.com/AileenNielsen/"
+        "TimeSeriesAnalysisWithPython/master/data/AirPassengers.csv"
+    )
+    df = pd.read_csv(url, index_col=0, parse_dates=True)
+    return df
+
+df = load_data()
+
+# Display data
+st.subheader("Air Passengers Dataset")
+st.write("Below is a sample of the dataset used for forecasting:")
+st.dataframe(df.head())
+
+# Prepare dataset for GluonTS
+dataset = ListDataset(
+    [{"start": df.index[0], "target": df["#Passengers"].values}],
+    freq="M",
 )
 
+# Model Configuration
+st.sidebar.header("Model Configuration")
+prediction_length = st.sidebar.slider("Prediction Length", 1, 24, 12)
+max_epochs = st.sidebar.slider("Training Epochs", 1, 20, 5)
 
-# Create the dash app
-DASH_APP = Dash(__name__,
-                use_pages=True,
-                external_stylesheets=[dbc.themes.BOOTSTRAP,
-                                      "assets/vendor/fontawesome-free/css/all.min.css",
-                                      "/assets/style.css",
-                                      "/assets/css/sb-admin-2.min.css",
-                                      "/assets/home.css"
-                                      ])
-
-
-# Home page design
-content = html.Div(
-    id="wrapper",
-    children=[
-        dcc.Location(id="url", refresh=False, pathname="/home"),
-        # sidebar
-        sidebar(),
-
-        # Content Wrapper
-        html.Div(
-            [
-                # Main Content
-                html.Div([
-                    # Topbar
-                    topbar(),
-
-                    # Begin Page Content
-                    html.Div([dash.page_container], className="container-fluid", style={'margin-top': '80px'})
-
-                ], id="content")
-            ],
-            id="content-wrapper",
-            className="d-flex flex-column",
-            style={'margin-left': '200px'}
-        )
-    ]
+# Train Model
+st.write("Training the model...")
+training_data = dataset
+test_data = ListDataset(
+    [{"start": df.index[-36], "target": df["#Passengers"][-36:].values}],
+    freq="M",
 )
 
-# Dash App main layout to display the pages
-DASH_APP.layout = html.Div([
-    content,
-], id="page-top", className="py-2")
+model = DeepAREstimator(
+    prediction_length=prediction_length, freq="M", trainer_kwargs={"max_epochs": max_epochs}
+).train(training_data)
 
+# Predict
+st.write("Generating forecasts...")
+forecasts = list(model.predict(test_data))
 
-# Update page to change the language
+# Plot Predictions
+st.subheader("Forecasts")
+fig, ax = plt.subplots(figsize=(10, 6))
+ax.plot(df["1954":], color="black", label="True Values")
+for forecast in forecasts:
+    forecast.plot(ax=ax, color="blue")  # Remove `alpha` argument
+ax.legend(loc="upper left", fontsize="large")
+ax.set_title("True Values and Forecasts")
+ax.set_xlabel("Time")
+ax.set_ylabel("Passengers")
+st.pyplot(fig)
 
-# Run the app
-if __name__ == '__main__':
-    DASH_APP.run_server(host='localhost', port=8888, debug=True)
+# Footer
+st.write("Developed with Streamlit.")
